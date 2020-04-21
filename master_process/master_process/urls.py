@@ -19,13 +19,14 @@ from django.conf import settings
 from uuid import uuid4
 
 from master_app.models import LapMessage
-from master_app.views import pos_message
+from master_app.views import PosMsgView
 from master_process.constants import Constants
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('pos_message/', pos_message),
+    path('pos_message/', PosMsgView.as_view()),
 ]
 
 settings.REDIS_DB.set(Constants.PROCESS_ID, str(uuid4()))
+settings.REDIS_DB.set(Constants.LAP_COUNT, 0)
 LapMessage.send_new_message_to_racers()

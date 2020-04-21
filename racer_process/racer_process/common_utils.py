@@ -18,7 +18,7 @@ def line_intersection(m1, c1, m2, c2):
     :param c1: constant intercept of line 1
     :param m2: slope of line 2
     :param c2: constant intercept of line 2
-    :return: list of two points on the given line
+    :return: intersection point of the two lines in the form of tuple
     """
     line1 = find_points_on_line(m1, c1)
     line2 = find_points_on_line(m2, c2)

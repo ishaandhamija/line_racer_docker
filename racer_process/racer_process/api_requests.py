@@ -1,19 +1,38 @@
 import requests
 import logging
 
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
+from racer_process.exceptions import CONNECTION_EXCEPTIONS, RequestException
 
 logger = logging.getLogger('MYAPP')
-
-
-class RequestException(BaseException):
-    def __init__(self, code):
-        self.code = code
 
 
 class APIRequest(object):
 
     @classmethod
-    def request(cls, request_type, url, params=None, data=None, raise_exception=False,
+    def _requests_retry_session(cls,
+                                retries,
+                                backoff_factor=0.3,
+                                status_forcelist=(500, 502, 504),
+                                session=None,
+                                ):
+        session = session or requests.Session()
+        retry = Retry(
+            total=retries,
+            read=retries,
+            connect=retries,
+            backoff_factor=backoff_factor,
+            status_forcelist=status_forcelist,
+        )
+        adapter = HTTPAdapter(max_retries=retry)
+        session.mount('http://', adapter)
+        session.mount('https://', adapter)
+        return session
+
+    @classmethod
+    def request(cls, request_type, url, params=None, data=None,
                 return_error=False, log_payload=True, log_params=True):
         try:
             request = requests.Session()
@@ -22,6 +41,7 @@ class APIRequest(object):
                 logger.info('APIRequest: QueryParams - %s', params)
             if data and log_payload:
                 logger.info('APIRequest: Payload - %s', data)
+            request = cls._requests_retry_session(retries=10, session=request)
             response = request.request(
                 request_type,
                 url,
@@ -33,11 +53,8 @@ class APIRequest(object):
                 return response.json()
             elif return_error and response.status_code == 400:
                 return response.json()
-            if raise_exception:
-                logger.info("Error response %s", response.content)
-                raise RequestException(response.status_code)
-        except Exception as e:
-            logger.exception('APIRequest.send: exception - ')
-            if raise_exception:
-                raise e
-        return None
+            logger.error("Error response %s", response.content)
+            raise RequestException(response.status_code)
+        except CONNECTION_EXCEPTIONS as exc:
+            logger.exception('APIRequest.send: exception - %s', exc)
+            raise exc

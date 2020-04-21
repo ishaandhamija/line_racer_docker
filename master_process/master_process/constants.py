@@ -11,6 +11,7 @@ class Constants(object):
     LAP_SLOPE_2 = 'lap_m2'
     LAP_CONSTANT_2 = 'lap_c2'
     LAP_START_TIME = 'lap_start_time'
+    LAP_START_TIME_ISO = 'lap_start_time_iso'
     PROCESS_ID = 'process_id'
 
     # Lap Message Keys
