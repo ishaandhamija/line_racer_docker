@@ -6,7 +6,9 @@ from requests.packages.urllib3.util.retry import Retry
 
 from racer_process.exceptions import CONNECTION_EXCEPTIONS, RequestException
 
-logger = logging.getLogger('MYAPP')
+logging.basicConfig()
+logger = logging.getLogger('RACER_APP')
+logger.setLevel(logging.INFO)
 
 
 class APIRequest(object):

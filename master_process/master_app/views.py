@@ -3,7 +3,6 @@ import logging
 from django.conf import settings
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.decorators import api_view
 from rest_framework.views import APIView
 
 from master_app.models import LapMessage
@@ -12,7 +11,7 @@ from master_process.constants import Constants
 from master_process.exceptions import REDIS_EXCEPTIONS, DB_EXCEPTIONS, CONNECTION_EXCEPTIONS
 
 logging.basicConfig()
-logger = logging.getLogger()
+logger = logging.getLogger('MASTER_APP')
 logger.setLevel(logging.INFO)
 
 
@@ -31,7 +30,8 @@ class PosMsgView(APIView):
                 redis_key_prefix = settings.RACER_1_PORT
 
             if redis_key_prefix is not None:
-                self.__check_other_port_redis_keys(redis_key_prefix, server_port, updated_x_coordinate, updated_y_coordinate)
+                self.__check_other_port_redis_keys(redis_key_prefix, server_port,
+                                                   updated_x_coordinate, updated_y_coordinate)
 
             return Response(
                 data={
@@ -66,7 +66,8 @@ class PosMsgView(APIView):
         """
         dist = distance_between_points(x1, y1, x2, y2)
         if dist > 10:
-            LapMessage.save_current_lap()
+            if settings.REDIS_DB.get(Constants.LAP_START_TIME_ISO):
+                LapMessage.save_current_lap()
             LapMessage.send_new_message_to_racers()
 
     def __check_other_port_redis_keys(self, redis_key_prefix, server_port, updated_x_coordinate, updated_y_coordinate):
@@ -85,11 +86,11 @@ class PosMsgView(APIView):
                     redis_key_prefix + Constants.Y_COORDINATE_SUFFIX
                 ]
             )
-            if other_port_x and other_port_y:
-                self.__process_both_coordinates(updated_x_coordinate, updated_y_coordinate,
-                                                float(other_port_x), float(other_port_y))
+            if other_port_x and other_port_y and updated_x_coordinate == float(other_port_x):
                 settings.REDIS_DB.delete(redis_key_prefix + Constants.X_COORDINATE_SUFFIX)
                 settings.REDIS_DB.delete(redis_key_prefix + Constants.Y_COORDINATE_SUFFIX)
+                self.__process_both_coordinates(updated_x_coordinate, updated_y_coordinate,
+                                                float(other_port_x), float(other_port_y))
             else:
                 settings.REDIS_DB.mset({
                     server_port + Constants.X_COORDINATE_SUFFIX: updated_x_coordinate,

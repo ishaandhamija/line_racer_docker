@@ -11,7 +11,7 @@ from master_process.constants import Constants
 from master_process.exceptions import REDIS_EXCEPTIONS, DB_EXCEPTIONS, CONNECTION_EXCEPTIONS
 
 logging.basicConfig()
-logger = logging.getLogger()
+logger = logging.getLogger('MASTER_APP')
 logger.setLevel(logging.INFO)
 
 
@@ -26,25 +26,27 @@ class LapMessage(models.Model):
     lap_completion_time = models.BigIntegerField(null=True)
     process_id = models.CharField(max_length=255)
 
-    @staticmethod
-    def save_current_lap():
+    @classmethod
+    def save_current_lap(cls):
         """
         Function to save lap details to the database
         :return:
         """
         try:
-            slope1, constant1, slope2, constant2, start_time, start_time_iso, lap_number, process_id = tuple(settings.REDIS_DB.mget(
-                [
-                    Constants.LAP_SLOPE_1,
-                    Constants.LAP_CONSTANT_1,
-                    Constants.LAP_SLOPE_2,
-                    Constants.LAP_CONSTANT_2,
-                    Constants.LAP_START_TIME,
-                    Constants.LAP_START_TIME_ISO,
-                    Constants.LAP_COUNT,
-                    Constants.PROCESS_ID
-                ]
-            ))
+            current_lap_redis_keys = [
+                Constants.LAP_SLOPE_1,
+                Constants.LAP_CONSTANT_1,
+                Constants.LAP_SLOPE_2,
+                Constants.LAP_CONSTANT_2,
+                Constants.LAP_START_TIME,
+                Constants.LAP_START_TIME_ISO,
+                Constants.LAP_COUNT,
+                Constants.PROCESS_ID
+            ]
+            slope1, constant1, slope2, constant2, start_time, start_time_iso, lap_number, process_id = tuple(settings.REDIS_DB.mget(current_lap_redis_keys))
+            current_lap_redis_keys.pop()
+            current_lap_redis_keys.pop()
+            cls.__delete_current_lap_keys(current_lap_redis_keys)
             start_time = int(start_time)
             current_dt = datetime.now()
             lap_completion_time = get_epoch_time(current_dt) - start_time
@@ -187,3 +189,8 @@ class LapMessage(models.Model):
         except DB_EXCEPTIONS as exc:
             logger.error('PrintFlowSummary: Error in request connection - %s', exc)
             raise exc
+
+    @classmethod
+    def __delete_current_lap_keys(cls, current_lap_redis_keys):
+        for key in current_lap_redis_keys:
+            settings.REDIS_DB.delete(key)

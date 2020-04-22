@@ -10,7 +10,7 @@ from racer_process.constants import Constants
 from racer_process.exceptions import REDIS_EXCEPTIONS, CONNECTION_EXCEPTIONS
 
 logging.basicConfig()
-logger = logging.getLogger()
+logger = logging.getLogger('RACER_APP')
 logger.setLevel(logging.INFO)
 
 

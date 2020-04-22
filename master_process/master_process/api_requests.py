@@ -6,7 +6,9 @@ from requests.packages.urllib3.util.retry import Retry
 
 from master_process.exceptions import CONNECTION_EXCEPTIONS, RequestException
 
-logger = logging.getLogger('MYAPP')
+logging.basicConfig()
+logger = logging.getLogger('MASTER_APP')
+logger.setLevel(logging.INFO)
 
 
 class APIRequest(object):
