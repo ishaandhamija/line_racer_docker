@@ -1,0 +1,51 @@
+version: '3'
+
+services:
+  db:
+    image: mongo
+    ports:
+      - "27017:27017"
+  redis:
+    image: "redis:alpine"
+  app:
+    container_name: master_container
+    restart: always
+    build: ./master_process
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    links:
+      - racer_a_app
+      - racer_b_app
+  racer_a_app:
+    container_name: racer_a_container
+    restart: always
+    build: ./racer_process_a
+    ports:
+      - "8001:8001"
+    depends_on:
+      - db
+      - redis
+    links:
+      - celery
+  racer_b_app:
+    container_name: racer_b_container
+    restart: always
+    build: ./racer_process_b
+    ports:
+      - "8002:8002"
+    depends_on:
+      - db
+      - redis
+    links:
+      - celery
+  celery:
+    build: ./racer_process_b
+    command: celery -A racer_process worker -l info
+    volumes:
+      - .:/code
+    depends_on:
+      - db
+      - redis

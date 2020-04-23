@@ -1,4 +1,4 @@
-"""master_process URL Configuration
+"""racer_process URL Configuration
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/3.0/topics/http/urls/
@@ -13,21 +13,13 @@ Including another URLconf
     1. Import the include() function: from django.urls import include, path
     2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
 """
-from uuid import uuid4
-
-from django.conf import settings
 from django.contrib import admin
 from django.urls import path
 
-from master_app.models import LapMessage
-from master_app.views import PosMsgView
-from master_process.constants import Constants
+from racer_app.views import lap_message, kill_message
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('pos_message/', PosMsgView.as_view()),
+    path('lap_message/', lap_message),
+    path('kill_message/', kill_message),
 ]
-
-settings.REDIS_DB.set(Constants.PROCESS_ID, str(uuid4()))
-settings.REDIS_DB.set(Constants.LAP_COUNT, 0)
-LapMessage.send_new_message_to_racers()
